@@ -1,0 +1,80 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string &&
+             id.size() >= 1 &&
+             id.size() <= 128 &&
+             id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidProduct(data) {
+      return data.name is string &&
+             data.name.size() >= 1 &&
+             data.name.size() <= 80 &&
+             data.description is string &&
+             data.description.size() <= 500 &&
+             data.priceCop is int &&
+             data.priceCop > 0 &&
+             data.priceCop <= 1000000000 &&
+             data.quantity is int &&
+             data.quantity >= 0 &&
+             data.quantity <= 1000000 &&
+             data.deleted is bool;
+    }
+
+    match /users/{userId}/products/{productId} {
+      allow get: if isOwner(userId) && isValidId(productId);
+      allow list: if isOwner(userId);
+
+      allow create: if isOwner(userId) &&
+                       isValidId(productId) &&
+                       incoming().keys().hasAll([
+                         'name', 'description', 'priceCop', 'quantity',
+                         'deleted', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'name', 'description', 'priceCop', 'quantity',
+                         'deleted', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidProduct(incoming()) &&
+                       incoming().createdAt is timestamp &&
+                       incoming().createdAt <= request.time &&
+                       incoming().updatedAt is timestamp &&
+                       incoming().updatedAt <= request.time;
+
+      allow update: if isOwner(userId) &&
+                       isValidId(productId) &&
+                       isValidProduct(incoming()) &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().updatedAt is timestamp &&
+                       incoming().updatedAt <= request.time &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'name', 'description', 'priceCop', 'quantity',
+                         'deleted', 'updatedAt'
+                       ]);
+
+      allow delete: if isOwner(userId) && isValidId(productId);
+    }
+  }
+}

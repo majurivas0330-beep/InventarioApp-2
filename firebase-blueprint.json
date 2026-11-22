@@ -1,0 +1,58 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "Producto del inventario perteneciente a un usuario autenticado.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Nombre del producto (1 a 80 caracteres)."
+        },
+        "description": {
+          "type": "string",
+          "description": "Descripcion breve del producto (hasta 500 caracteres)."
+        },
+        "priceCop": {
+          "type": "integer",
+          "description": "Precio unitario en pesos colombianos enteros (mayor a 0)."
+        },
+        "quantity": {
+          "type": "integer",
+          "description": "Cantidad disponible en inventario (0 o mayor)."
+        },
+        "deleted": {
+          "type": "boolean",
+          "description": "Bandera tombstone para eliminacion logica sincronizada."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Marca temporal del servidor al crear el documento (FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Marca temporal del servidor en la ultima modificacion (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": [
+        "name",
+        "description",
+        "priceCop",
+        "quantity",
+        "deleted",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/products/{productId}": {
+      "schema": {
+        "$ref": "#/entities/Product"
+      },
+      "description": "Subcoleccion privada de productos del inventario por usuario autenticado."
+    }
+  }
+}

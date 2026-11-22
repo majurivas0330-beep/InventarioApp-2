@@ -1,0 +1,27 @@
+<resources>
+    <string name="app_name">InventarioApp</string>
+    <string name="inventario_title">Inventario</string>
+    <string name="action_sync">Sincronizar</string>
+    <string name="action_sign_out">Cerrar sesión</string>
+    <string name="action_add_product">Agregar producto</string>
+    <string name="action_edit">Editar</string>
+    <string name="action_delete">Eliminar</string>
+    <string name="action_cancel">Cancelar</string>
+    <string name="action_save">Guardar producto</string>
+    <string name="action_saving">Guardando...</string>
+    <string name="new_product_title">Nuevo producto</string>
+    <string name="edit_product_title">Editar producto</string>
+    <string name="empty_inventory_title">Sin productos registrados</string>
+    <string name="empty_inventory_subtitle">Pulsa + para agregar el primer producto al inventario.</string>
+    <string name="delete_dialog_title">Eliminar producto</string>
+    <string name="delete_dialog_message">Se ocultará localmente y se sincronizará la eliminación con Firebase Firestore.</string>
+    <string name="auth_title">InventarioApp</string>
+    <string name="auth_subtitle">Gestiona tu inventario en tiempo real con sincronización en la nube y respaldo local sin conexión.</string>
+    <string name="auth_sign_in_google">Continuar con Google</string>
+    <string name="auth_checking_session">Verificando sesión...</string>
+    <string name="field_name">Nombre</string>
+    <string name="field_description">Descripción</string>
+    <string name="field_price_cop">Precio COP</string>
+    <string name="field_quantity">Cantidad</string>
+    <string name="search_placeholder">Buscar producto...</string>
+</resources>

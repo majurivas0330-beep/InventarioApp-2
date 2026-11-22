@@ -1,0 +1,6 @@
+{
+  "name": "InventarioApp",
+  "description": "Gestión de inventario CRUD en tiempo real con arquitectura MVVM, Room y Firebase Firestore.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
