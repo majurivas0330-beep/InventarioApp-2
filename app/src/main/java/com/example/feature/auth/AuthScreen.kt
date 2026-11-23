@@ -29,6 +29,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -54,7 +55,7 @@ import com.example.R
 
 @Composable
 fun AuthScreen(
-    onAuthSuccess: () -> Unit
+    onAuthSuccess: (UserSession) -> Unit
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -68,9 +69,9 @@ fun AuthScreen(
         attemptAutoSignIn(
             context = context,
             credentialManager = credentialManager,
-            onAuthSuccess = {
+            onAuthSuccess = { session ->
                 checkingSession = false
-                onAuthSuccess()
+                onAuthSuccess(session)
             },
             onUnauthenticated = {
                 checkingSession = false
@@ -200,9 +201,9 @@ fun AuthScreen(
                             onGoogleSignInClicked(
                                 context = context,
                                 credentialManager = credentialManager,
-                                onAuthSuccess = {
+                                onAuthSuccess = { session ->
                                     isSigningIn = false
-                                    onAuthSuccess()
+                                    onAuthSuccess(session)
                                 },
                                 onAuthError = { message ->
                                     isSigningIn = false
@@ -238,6 +239,35 @@ fun AuthScreen(
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
+                    }
+
+                    OutlinedButton(
+                        onClick = {
+                            errorMessage = null
+                            isSigningIn = true
+                            onAnonymousSignInClicked(
+                                onAuthSuccess = { session ->
+                                    isSigningIn = false
+                                    onAuthSuccess(session)
+                                },
+                                onAuthError = { message ->
+                                    isSigningIn = false
+                                    errorMessage = message
+                                },
+                                scope = scope
+                            )
+                        },
+                        enabled = !isSigningIn,
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp)
+                            .testTag("anonymous_sign_in_button")
+                    ) {
+                        Text(
+                            text = "Acceder en modo invitado / prueba",
+                            style = MaterialTheme.typography.labelLarge
+                        )
                     }
                 }
             }
