@@ -28,9 +28,16 @@ class AppContainer(context: Context) {
     }
 
     val firestore: FirebaseFirestore by lazy {
-        FirebaseFirestore.getInstance(
-            appContext.getString(R.string.firestore_database_id)
-        )
+        val databaseId = appContext.getString(R.string.firestore_database_id)
+        try {
+            if (databaseId.isNotBlank() && databaseId != "(default)") {
+                FirebaseFirestore.getInstance(databaseId)
+            } else {
+                FirebaseFirestore.getInstance()
+            }
+        } catch (_: Exception) {
+            FirebaseFirestore.getInstance()
+        }
     }
 
     val remoteDataSource: FirestoreProductDataSource by lazy {

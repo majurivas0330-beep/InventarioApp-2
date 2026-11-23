@@ -24,6 +24,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 
+data class UserSession(
+    val uid: String,
+    val email: String?
+)
+
 tailrec fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this
     is ContextWrapper -> baseContext.findActivity()
@@ -33,12 +38,13 @@ tailrec fun Context.findActivity(): Activity? = when (this) {
 fun attemptAutoSignIn(
     context: Context,
     credentialManager: CredentialManager,
-    onAuthSuccess: () -> Unit,
+    onAuthSuccess: (UserSession) -> Unit,
     onUnauthenticated: () -> Unit,
     scope: CoroutineScope
 ) {
-    if (Firebase.auth.currentUser != null) {
-        onAuthSuccess()
+    val firebaseUser = Firebase.auth.currentUser
+    if (firebaseUser != null) {
+        onAuthSuccess(UserSession(uid = firebaseUser.uid, email = firebaseUser.email ?: "Usuario Autenticado"))
         return
     }
     val clientId = try {
@@ -62,8 +68,13 @@ fun attemptAutoSignIn(
             val cred = credentialManager.getCredential(activityContext, request).credential
             if (cred is CustomCredential && cred.type == TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
                 val token = GoogleIdTokenCredential.createFrom(cred.data).idToken
-                Firebase.auth.signInWithCredential(GoogleAuthProvider.getCredential(token, null)).await()
-                onAuthSuccess()
+                val authResult = Firebase.auth.signInWithCredential(GoogleAuthProvider.getCredential(token, null)).await()
+                val user = authResult.user
+                if (user != null) {
+                    onAuthSuccess(UserSession(uid = user.uid, email = user.email))
+                } else {
+                    onUnauthenticated()
+                }
             } else {
                 onUnauthenticated()
             }
@@ -78,7 +89,7 @@ fun attemptAutoSignIn(
 fun onGoogleSignInClicked(
     context: Context,
     credentialManager: CredentialManager,
-    onAuthSuccess: () -> Unit,
+    onAuthSuccess: (UserSession) -> Unit,
     onAuthError: (String) -> Unit,
     scope: CoroutineScope,
     onAuthCancelled: () -> Unit = {}
@@ -100,8 +111,13 @@ fun onGoogleSignInClicked(
             val cred = credentialManager.getCredential(activityContext, request).credential
             if (cred is CustomCredential && cred.type == TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
                 val token = GoogleIdTokenCredential.createFrom(cred.data).idToken
-                Firebase.auth.signInWithCredential(GoogleAuthProvider.getCredential(token, null)).await()
-                onAuthSuccess()
+                val authResult = Firebase.auth.signInWithCredential(GoogleAuthProvider.getCredential(token, null)).await()
+                val user = authResult.user
+                if (user != null) {
+                    onAuthSuccess(UserSession(uid = user.uid, email = user.email))
+                } else {
+                    onAuthError("Error al obtener usuario de Google")
+                }
             } else {
                 onAuthError("Tipo de credencial inesperado")
             }
@@ -117,6 +133,28 @@ fun onGoogleSignInClicked(
     }
 }
 
+fun onAnonymousSignInClicked(
+    onAuthSuccess: (UserSession) -> Unit,
+    onAuthError: (String) -> Unit,
+    scope: CoroutineScope
+) {
+    scope.launch {
+        try {
+            val authResult = Firebase.auth.signInAnonymously().await()
+            val user = authResult.user
+            if (user != null) {
+                onAuthSuccess(UserSession(uid = user.uid, email = "Invitado (Nube)"))
+                return@launch
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w("Auth", "Anonymous Firebase Sign-In failed/disabled, using local guest session: ${e.message}")
+        }
+        onAuthSuccess(UserSession(uid = "guest_local_user", email = "Invitado (Modo Local)"))
+    }
+}
+
 fun signOutUser(
     credentialManager: CredentialManager,
     scope: CoroutineScope,
@@ -129,7 +167,9 @@ fun signOutUser(
             } catch (e: Exception) {
                 Log.w("Auth", "Failed to clear credential state: ${e.message}")
             } finally {
-                Firebase.auth.signOut()
+                try {
+                    Firebase.auth.signOut()
+                } catch (_: Exception) {}
                 onSignOutComplete()
             }
         }

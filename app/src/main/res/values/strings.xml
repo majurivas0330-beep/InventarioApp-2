@@ -24,4 +24,5 @@
     <string name="field_price_cop">Precio COP</string>
     <string name="field_quantity">Cantidad</string>
     <string name="search_placeholder">Buscar producto...</string>
+    <string name="default_web_client_id" translatable="false">YOUR_DEFAULT_WEB_CLIENT_ID</string>
 </resources>
