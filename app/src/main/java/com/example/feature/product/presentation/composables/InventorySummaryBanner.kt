@@ -26,9 +26,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.ui.theme.DeepNavy
-import com.example.ui.theme.EmeraldBright
-import com.example.ui.theme.EmeraldTeal
+import com.example.ui.theme.EmeraldContainer
+import com.example.ui.theme.EmeraldPrimary
+import com.example.ui.theme.SlateSurface
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -54,7 +54,7 @@ fun InventorySummaryBanner(
             .clip(RoundedCornerShape(20.dp))
             .background(
                 Brush.linearGradient(
-                    colors = listOf(DeepNavy, EmeraldTeal)
+                    colors = listOf(SlateSurface, EmeraldContainer)
                 )
             )
             .padding(20.dp)
@@ -95,7 +95,7 @@ fun InventorySummaryBanner(
                                 .size(8.dp)
                                 .clip(CircleShape)
                                 .background(
-                                    if (isRealtimeConnected) EmeraldBright else Color(0xFFFBBF24)
+                                    if (isRealtimeConnected) EmeraldPrimary else Color(0xFFFBBF24)
                                 )
                         )
                         Icon(

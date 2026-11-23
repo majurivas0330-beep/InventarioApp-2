@@ -32,9 +32,8 @@ class ProductRepositoryImpl(
     private val syncMutex = Mutex()
 
     private fun requireUserId(expectedUserId: String): String {
-        val currentUid = auth.currentUser?.uid
-            ?: throw IllegalStateException("Debes iniciar sesión con Google para acceder al inventario.")
-        check(currentUid == expectedUserId) {
+        val currentUid = auth.currentUser?.uid ?: expectedUserId
+        check(currentUid == expectedUserId || auth.currentUser == null) {
             "La sesión de usuario cambió; operación cancelada."
         }
         return currentUid
@@ -183,7 +182,14 @@ class ProductRepositoryImpl(
 
     private suspend fun seedIfFreshAccount(uid: String) {
         if (dao.countAllForUser(uid) > 0) return
-        val remoteExisting = remote.fetchFromServer(uid)
+        val remoteExisting = try {
+            remote.fetchFromServer(uid)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            emptyList()
+        }
+
         if (remoteExisting.isNotEmpty()) {
             val entities = remoteExisting
                 .filter { it.id.isNotBlank() }
@@ -196,7 +202,7 @@ class ProductRepositoryImpl(
 
         val now = System.currentTimeMillis()
         val seedDtos = defaultInitialProducts()
-        // Insert local entities immediately as pending=true, then push batch to Firestore
+        // Insert local entities immediately as pending=true, then push batch to Firestore if network is available
         val localSeeds = seedDtos.mapIndexed { index, dto ->
             ProductEntity(
                 id = dto.id,
@@ -212,9 +218,15 @@ class ProductRepositoryImpl(
             )
         }
         dao.upsertAll(localSeeds)
-        remote.seedInitialProducts(uid, seedDtos)
-        localSeeds.forEach { entity ->
-            dao.markSynced(uid, entity.id, entity.updatedAt)
+        try {
+            remote.seedInitialProducts(uid, seedDtos)
+            localSeeds.forEach { entity ->
+                dao.markSynced(uid, entity.id, entity.updatedAt)
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            // Se mantiene precargado localmente en Room para operativizar en modo offline
         }
     }
 

@@ -20,6 +20,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.example.InventoryApplication
 import com.example.feature.auth.AuthScreen
+import com.example.feature.auth.UserSession
 import com.example.feature.auth.signOutUser
 import com.example.feature.product.domain.usecase.SaveProductUseCase
 import com.example.feature.product.presentation.screen.ProductFormScreen
@@ -39,11 +40,19 @@ data class ProductFormRoute(val id: String? = null)
 
 @Composable
 fun AppNavigation() {
-    var currentUser by remember { mutableStateOf(Firebase.auth.currentUser) }
+    val initialFirebaseUser = Firebase.auth.currentUser
+    var userSession by remember {
+        mutableStateOf<UserSession?>(
+            initialFirebaseUser?.let { UserSession(it.uid, it.email ?: "Usuario Autenticado") }
+        )
+    }
 
     DisposableEffect(Unit) {
         val listener = FirebaseAuth.AuthStateListener { auth ->
-            currentUser = auth.currentUser
+            val user = auth.currentUser
+            if (user != null) {
+                userSession = UserSession(user.uid, user.email ?: "Invitado (Nube)")
+            }
         }
         Firebase.auth.addAuthStateListener(listener)
         onDispose {
@@ -51,16 +60,16 @@ fun AppNavigation() {
         }
     }
 
-    val user = currentUser
-    if (user == null) {
+    val session = userSession
+    if (session == null) {
         AuthScreen(
-            onAuthSuccess = {
-                currentUser = Firebase.auth.currentUser
+            onAuthSuccess = { newSession ->
+                userSession = newSession
             }
         )
     } else {
-        val uid = user.uid
-        val userEmail = user.email
+        val uid = session.uid
+        val userEmail = session.email
         val context = LocalContext.current
         val scope = rememberCoroutineScope()
         val credentialManager = remember(context) { CredentialManager.create(context) }
@@ -96,7 +105,10 @@ fun AppNavigation() {
                         onSignOut = {
                             signOutUser(
                                 credentialManager = credentialManager,
-                                scope = scope
+                                scope = scope,
+                                onSignOutComplete = {
+                                    userSession = null
+                                }
                             )
                         }
                     )
